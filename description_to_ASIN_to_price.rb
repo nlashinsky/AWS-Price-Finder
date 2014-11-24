@@ -92,6 +92,7 @@ Item.limit(20).each do |item|
   puts "Desc. #{description[0]}; #{description[1]}; #{description[2]}; #{description[3]}"
 
 
+
   ###TO DO - build in logic for finding pricing and  handling nil values 
   # if parsed_response_with_more_info['ItemLookupResponse']['Items']['Item']['ItemAttributes']['ListPrice']['FormattedPrice'] != nil 
   #   puts "Price: #{price_list}" 
