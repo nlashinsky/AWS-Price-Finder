@@ -1,15 +1,16 @@
-# # require the Rails application environment which will give us access to our project's data models & gems
+## require the Rails application environment which will give us access to our project's data models & gems
  require File.dirname(File.expand_path(File.dirname(__FILE__))) + "/config/environment"
  require 'pp'
  require 'csv'
 
-# # loop through each of the items in the database
+## loop through each of the items in the database
+
 Item.limit(20).each do |item|
  
 #   ##collect the item data that we will use in our AWS query
-#   ##TODO: sanitize these!
+#   ##TODO - you may want to sanitize these!
 
-  brand = item.company_name
+  brand = item.company_name  #Obviously, you'll want to name based on your own Rails app schema.
   name = item.name
   color = item.color
  
@@ -29,8 +30,8 @@ Item.limit(20).each do |item|
  
   # set up the parameters of our query using item data; run the query
   params_raw = {
-    'SearchIndex' => 'Beauty',
-    'Keywords'    => [brand, name, color].join(' '), 
+    'SearchIndex' => 'Books' #Search index here i.e. 'Beauty',
+    'Keywords'    => [brand, name, color].join(' '), #Keywords go here:
     'ResponseGroup' => 'Request'
   }
   
@@ -38,15 +39,13 @@ Item.limit(20).each do |item|
  
   puts "==  Result of query to get ASIN... ==\n"
   
-  #doc << Nokogiri::XML(APIResult)
-  #puts doc.xpath()
   # print out the result ASIN of the query 
   parsed_response_from_raw_request = response_from_raw_request.to_h
   aws_ASIN = parsed_response_from_raw_request['ItemSearchResponse']['Items']['Item'][0]['ASIN']
   
   puts "ASIN is #{aws_ASIN}"
 
-#   #Take ASIN and make API call to get product info
+## Given the ASIN, we now make an API call to get rich Amazon product info
 
   request_more_info = Vacuum.new
 
@@ -57,9 +56,8 @@ Item.limit(20).each do |item|
     )  
 
   params_more_info = {
-    'ItemId' => 'B007MKTZTI', #{}"#{aws_ASIN}", 
-    'ResponseGroup' => 'Request, OfferSummary, ItemAttributes'
-  }
+    'ItemId' => "#{aws_ASIN}", 
+    'ResponseGroup' => 'Request, OfferSummary, ItemAttributes' #Specify what data you want to receive. See AWS docs. 
 
   response_with_more_info = request_more_info.item_lookup(query: params_more_info, persistent: true)
 
@@ -68,41 +66,41 @@ Item.limit(20).each do |item|
   #Convert XMl response to Hash Table 
 
   parsed_response_with_more_info = response_with_more_info.to_h
-
   
-  ######You can use this PP.pp method to look at pretty-print version of XML to determine XML path#####
+  ######You can also use this prety print "PP.pp" method below to look at pretty-print version of XML to determine XML path#####
   #puts PP.pp(parsed_response_with_more_info = response_with_more_info.to_h)
-
 
   ##parse for the ASIN, manufacturer, title and price
   # puts ASIN = parsed_response_with_more_info.inspect
 
+
+
+
   brand = parsed_response_with_more_info['ItemLookupResponse']['Items']['Item']['ItemAttributes']['Brand']
   manufacturer = parsed_response_with_more_info['ItemLookupResponse']['Items']['Item']['ItemAttributes']['Manufacturer']
   title = parsed_response_with_more_info['ItemLookupResponse']['Items']['Item']['ItemAttributes']['Title']
-  #weight_num = parsed_response_with_more_info['ItemLookupResponse']['Items']['Item']['ItemAttributes']['PackageDimensions']['Weight']['__content__']
-  #weight_units = parsed_response_with_more_info['ItemLookupResponse']['Items']['Item']['ItemAttributes']['PackageDimensions']['Weight']['Units']
+  weight_num = parsed_response_with_more_info['ItemLookupResponse']['Items']['Item']['ItemAttributes']['PackageDimensions']['Weight']['__content__']
+  weight_units = parsed_response_with_more_info['ItemLookupResponse']['Items']['Item']['ItemAttributes']['PackageDimensions']['Weight']['Units']
   upc = parsed_response_with_more_info['ItemLookupResponse']['Items']['Item']['ItemAttributes']['UPC']
   description = parsed_response_with_more_info['ItemLookupResponse']['Items']['Item']['ItemAttributes']['Feature']
   
   puts "Brand: #{brand}" 
   puts "Manufacturer: #{manufacturer}" 
   puts "Title: #{title}"  
-  #puts "Weight:  #{weight_num}  #{weight_units}" 
+  puts "Weight:  #{weight_num}  #{weight_units}" 
   puts "UPC: #{upc}" 
   puts "Desc. #{description[0]}; #{description[1]}; #{description[2]}; #{description[3]}"
 
 
-  #   ##TO DO - build in logic for finding pricing and  handling nil values 
-
-  if parsed_response_with_more_info['ItemLookupResponse']['Items']['Item']['ItemAttributes']['ListPrice']['FormattedPrice'] != nil 
-    puts "Price: #{price_list}" 
-  else 
-    if parsed_response_with_more_info['ItemLookupResponse']['Items']['Item']['OfferSummary']['LowestNewPrice']['FormattedPrice'] != nil 
-      puts "Price: #{price_att}" 
-    else puts "no price found"
-    end 
-  end 
+  ###TO DO - build in logic for finding pricing and  handling nil values 
+  # if parsed_response_with_more_info['ItemLookupResponse']['Items']['Item']['ItemAttributes']['ListPrice']['FormattedPrice'] != nil 
+  #   puts "Price: #{price_list}" 
+  # else 
+  #   if parsed_response_with_more_info['ItemLookupResponse']['Items']['Item']['OfferSummary']['LowestNewPrice']['FormattedPrice'] != nil 
+  #     puts "Price: #{price_att}" 
+  #   else puts "no price found"
+  #   end 
+  # end 
 
   # puts "\n========x===================================x======\n"
    end
